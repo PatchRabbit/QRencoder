@@ -1,27 +1,288 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
 <head>
+    <meta name="robots" content="noindex">
+    <meta name="googlebot" content="noindex">
+    <meta content="QR Code Generator by PatchRabbit" name="description">
+    <meta content="QR Code Generator" property="og:title">
+    <meta content="On-host QR Code Generator" property="og:description">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta http-equiv="content-language" content="en" />
+    <title>QR Encode Standalone</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script type="text/javascript" src="scripts/qr-code-styling.min.js"></script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Encoder</title>
-    <!-- Basic styling until we build the app -->
-    <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #0f172a;
-            color: white;
-        }
-    </style>
 </head>
-<body>
-    <div id="app">
-        <h1>QR Encoder</h1>
-        <p>Project initialized.</p>
+
+<body style="background-image: url('JamesBackgroundBlackDesktop.png'); background-color: #010101; margin: 0;">
+    
+    <!-- Background Particle Canvas -->
+    <canvas id="antigravity-canvas"></canvas>
+
+    <!-- Main Content Container -->
+    <div id="content">
+        <div class="container" style="top: 50%; width: 100%; max-width: 1024px; text-align: center;">
+            <div class="title-text" style="padding-top: 5%;">
+                QR Code Generator
+            </div>
+            <div class="body-text" style="padding-top: 24px;">
+                Generate a customized QR code directly in your browser.<br>
+                All processing is done locally 'on-host'.<br>
+                <br><br>
+                <input type="text" id="qrtext" oninput="generateQR()" value="https://patchrabbit.co.uk"
+                    placeholder="Enter text or URL to encode" />
+                <br>
+                
+                <div style="margin-top: 15px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <label for="fgColor" style="color: #e9e9e9; font-size: 20px; font-family: 'Junicode', sans-serif;">Foreground: </label>
+                    <input type="color" id="fgColor" value="#000000" onchange="generateQR()" style="width: 50px; height: 50px; padding: 0; border: none; cursor: pointer;">
+                    
+                    <label for="bgColor" style="color: #e9e9e9; font-size: 20px; font-family: 'Junicode', sans-serif; margin-left: 15px;">Background: </label>
+                    <input type="color" id="bgColor" value="#ffffff" onchange="generateQR()" style="width: 50px; height: 50px; padding: 0; border: none; cursor: pointer;">
+                </div>
+
+                <div class="radio-toolbar" style="margin-top: 15px; margin-bottom: 30px;">
+                    <input type="radio" id="square" name="qrshape" value="square" checked onchange="generateQR()">
+                    <label for="square">Square</label>
+                    
+                    <input type="radio" id="rounded" name="qrshape" value="rounded" onchange="generateQR()">
+                    <label for="rounded">Rounded</label>
+                </div>
+
+                <div style="text-align: center;">
+                    <div id="qrcanvas"
+                        style="padding: 15px; border-radius: 8px; display: inline-block; box-shadow: 0 0 15px rgba(255,255,255,0.2);"></div>
+                </div>
+                <br>
+            </div>
+        </div>
     </div>
+
+    <!-- Application Script combining the Generator & Particles -->
+    <script>
+        // --- QR Generator Logic ---
+        var qrCode;
+        function generateQR() {
+            var text = document.getElementById('qrtext').value;
+            var container = document.getElementById('qrcanvas');
+            var fgColorVal = document.getElementById('fgColor').value;
+            var bgColorVal = document.getElementById('bgColor').value;
+            var shapeVal = document.querySelector('input[name="qrshape"]:checked').value;
+            
+            var dotsType = shapeVal === 'rounded' ? 'rounded' : 'square';
+            var cornersSquareType = shapeVal === 'rounded' ? 'extra-rounded' : 'square';
+            var cornersDotType = shapeVal === 'rounded' ? 'dot' : 'square';
+
+            if (text.trim() === '') {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = 'inline-block';
+            
+            // Set container wrapper background to match QR background to style the padding seamlessly
+            container.style.backgroundColor = bgColorVal;
+
+            if (!qrCode) {
+                qrCode = new QRCodeStyling({
+                    width: 250,
+                    height: 250,
+                    data: text,
+                    dotsOptions: {
+                        color: fgColorVal,
+                        type: dotsType
+                    },
+                    backgroundOptions: {
+                        color: bgColorVal,
+                    },
+                    cornersSquareOptions: {
+                        color: fgColorVal,
+                        type: cornersSquareType
+                    },
+                    cornersDotOptions: {
+                        color: fgColorVal,
+                        type: cornersDotType
+                    }
+                });
+                qrCode.append(container);
+            } else {
+                qrCode.update({
+                    data: text,
+                    dotsOptions: {
+                        color: fgColorVal,
+                        type: dotsType
+                    },
+                    backgroundOptions: {
+                        color: bgColorVal,
+                    },
+                    cornersSquareOptions: {
+                        color: fgColorVal,
+                        type: cornersSquareType
+                    },
+                    cornersDotOptions: {
+                        color: fgColorVal,
+                        type: cornersDotType
+                    }
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            generateQR();
+        });
+
+
+        // --- Particle Background Logic ---
+        (function () {
+            const canvas = document.getElementById('antigravity-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let width, height;
+            let particles = [];
+            const mouse = { x: undefined, y: undefined };
+
+            // Listen directly to main window's mouse movements
+            window.addEventListener('mousemove', (e) => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+
+            window.addEventListener('mouseleave', () => {
+                mouse.x = undefined;
+                mouse.y = undefined;
+            });
+
+            window.addEventListener('resize', () => {
+                resize();
+                initParticles();
+            });
+
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+            resize();
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height;
+                    
+                    if (Math.random() > 0.8) {
+                        this.size = Math.random() * 2.0 + 1.0;
+                    } else {
+                        this.size = Math.random() * 1.0 + 0.5;
+                    }
+
+                    this.baseVx = (Math.random() - 0.5) * 0.15;
+                    this.baseVy = (Math.random() - 0.5) * 0.15;
+                    this.vx = this.baseVx;
+                    this.vy = this.baseVy;
+                }
+
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
+                        const edge = Math.floor(Math.random() * 4);
+                        if (edge === 0) { this.x = Math.random() * width; this.y = 0; }
+                        else if (edge === 1) { this.x = width; this.y = Math.random() * height; }
+                        else if (edge === 2) { this.x = Math.random() * width; this.y = height; }
+                        else { this.x = 0; this.y = Math.random() * height; }
+                        
+                        let angle = Math.atan2((height / 2) - this.y, (width / 2) - this.x);
+                        angle += (Math.random() - 0.5); 
+                        let speed = Math.random() * 0.08 + 0.03;
+                        this.baseVx = Math.cos(angle) * speed;
+                        this.baseVy = Math.sin(angle) * speed;
+                        this.vx = this.baseVx;
+                        this.vy = this.baseVy;
+                    }
+
+                    let attracted = false;
+
+                    if (mouse.x !== undefined && mouse.y !== undefined) {
+                        let dx = mouse.x - this.x;
+                        let dy = mouse.y - this.y;
+                        let distSq = dx * dx + dy * dy;
+                        
+                        if (distSq < 22500) {
+                            let dist = Math.sqrt(distSq);
+                            attracted = true;
+                            let force = (150 - dist) / 150;
+                            this.vx += (dx / dist) * force * 0.05;
+                            this.vy += (dy / dist) * force * 0.05;
+                        }
+                    }
+
+                    let speedSq = this.vx * this.vx + this.vy * this.vy;
+                    let maxSpeed = attracted ? 2.5 : 0.15;
+                    
+                    if (speedSq > maxSpeed * maxSpeed) {
+                        let speed = Math.sqrt(speedSq);
+                        this.vx = (this.vx / speed) * maxSpeed;
+                        this.vy = (this.vy / speed) * maxSpeed;
+                    }
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = 'white';
+                    ctx.fill();
+                }
+            }
+
+            function initParticles() {
+                particles = [];
+                let count = Math.floor((width * height) / 4000);
+                if (count > 500) count = 500;
+                if (count < 100) count = 100;
+
+                for (let i = 0; i < count; i++) {
+                    particles.push(new Particle());
+                }
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                }
+
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        let dx = particles[i].x - particles[j].x;
+                        let dy = particles[i].y - particles[j].y;
+                        
+                        if (Math.abs(dx) < 70 && Math.abs(dy) < 70) {
+                            let distSq = dx * dx + dy * dy;
+                            if (distSq < 4900) {
+                                let dist = Math.sqrt(distSq);
+                                let opacity = 1 - (dist / 70);
+                                ctx.beginPath();
+                                ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+                                ctx.moveTo(particles[i].x, particles[i].y);
+                                ctx.lineTo(particles[j].x, particles[j].y);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                }
+
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].draw();
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            initParticles();
+            animate();
+        })();
+    </script>
 </body>
 </html>
